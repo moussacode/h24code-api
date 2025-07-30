@@ -1,5 +1,8 @@
 <?php
+// 1. Migration pour créer la table snippets (si pas encore fait)
+// php artisan make:migration create_snippets_table
 
+// database/migrations/xxxx_xx_xx_create_snippets_table.php
 namespace App\Http\Controllers;
 
 use App\Models\Snippet;
@@ -9,67 +12,42 @@ use Exception;
 
 class SnippetController extends Controller
 {
-    /**
-     * Récupérer tous les snippets
-     */
     public function index()
     {
         try {
             $snippets = Snippet::orderBy('created_at', 'desc')->get();
-            
-            return response()->json([
-                'success' => true,
-                'data' => $snippets,
-                'count' => $snippets->count()
-            ])->header('Access-Control-Allow-Origin', '*')
-              ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-              ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-              
+            return response()->json($snippets);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des snippets: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Erreur serveur'
-            ], 500)->header('Access-Control-Allow-Origin', '*');
+            return response()->json(['error' => 'Erreur serveur'], 500);
         }
     }
 
-    /**
-     * Créer un nouveau snippet
-     */
     public function store(Request $request)
     {
         try {
+            // Log pour debug
+            Log::info('Données reçues:', $request->all());
+            
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'category' => 'required|string|in:PHP,HTML,CSS,JavaScript,Python,Java',
+                'category' => 'required|string|in:PHP,HTML,CSS',
                 'code' => 'required|string',
             ]);
 
             $snippet = Snippet::create($validated);
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Snippet créé avec succès',
-                'data' => $snippet
-            ], 201)->header('Access-Control-Allow-Origin', '*')
-                   ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                   ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+            Log::info('Snippet créé avec succès:', $snippet->toArray());
+            
+            return response()->json($snippet, 201);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors()
-            ], 422)->header('Access-Control-Allow-Origin', '*');
+            Log::error('Erreur de validation:', $e->errors());
+            return response()->json(['errors' => $e->errors()], 422);
         } catch (Exception $e) {
             Log::error('Erreur lors de la création du snippet: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Erreur serveur'
-            ], 500)->header('Access-Control-Allow-Origin', '*');
+            return response()->json(['error' => 'Erreur serveur: ' . $e->getMessage()], 500);
         }
     }
-
-    // Appliquez les mêmes headers aux autres méthodes...
 }
