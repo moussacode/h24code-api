@@ -33,7 +33,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
 # Activer mod_rewrite
-RUN a2enmod rewrite
+RUN a2enmod rewrite \
+    && a2enmod headers
 
 # Copier la configuration Apache
 COPY ./vhost.conf /etc/apache2/sites-available/000-default.conf
