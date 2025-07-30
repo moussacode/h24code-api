@@ -1,0 +1,29 @@
+name: Deploy Laravel to h24code-api.gt.tc
+
+# Déclenchement manuel ou sur push vers main
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy via FTP to h24code-api.gt.tc
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1: Récupérer le code depuis GitHub
+      - name: Get latest code
+        uses: actions/checkout@v4
+
+      # Étape 2: Upload via FTP vers InfinityFree
+      - name: Deploy to h24code-api.gt.tc via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftpupload.net
+          username: ${{ secrets.FTP_USERNAME }}  # if0_39592127
+          password: ${{ secrets.FTP_PASSWORD }}  # NtSo6GLzg41B
+          server-dir: /htdocs/  # Domaine principal h24code-api.gt.tc
+          timeout: 86400000
+          log-level: standard
