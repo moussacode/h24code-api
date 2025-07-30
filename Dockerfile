@@ -35,23 +35,24 @@ RUN chown -R www-data:www-data /var/www/html \
 # Activer mod_rewrite
 RUN a2enmod rewrite \
     && a2enmod headers
-
-# Copier la configuration Apache
+# Copier la configuration Apache (sans changer le port ici)
 COPY ./vhost.conf /etc/apache2/sites-available/000-default.conf
 
-# Exposer le port 80
+# Exposer le port demandé par Render
 EXPOSE 80
 
-# Créer un script de démarrage inline
+# Script de démarrage qui adapte le port Apache dynamiquement
 RUN echo '#!/bin/bash\n\
 echo "🚀 Démarrage de Laravel..."\n\
 php artisan migrate --force || echo "Migration échouée"\n\
 php artisan config:cache\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
+echo "✅ Configuration Apache pour écouter sur le port $PORT"\n\
+sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf\n\
+sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/g" /etc/apache2/sites-available/000-default.conf\n\
 echo "✅ Démarrage Apache..."\n\
 exec apache2-foreground' > /start.sh \
     && chmod +x /start.sh
 
-# Démarrer avec le script
 CMD ["/start.sh"]
